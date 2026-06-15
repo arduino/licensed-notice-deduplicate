@@ -13,11 +13,15 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 )
+
+const groupedHeaderString = "License for the following packages:"
 
 type entry struct {
 	name    string
@@ -38,13 +42,7 @@ func parseNotice(r io.Reader) (header string, entries []entry, err error) {
 	}
 
 	// Everything before the first ***** is the header.
-	firstSep := -1
-	for i, line := range lines {
-		if line == "*****" {
-			firstSep = i
-			break
-		}
-	}
+	firstSep := slices.Index(lines, "*****")
 	if firstSep == -1 {
 		header = strings.Join(lines, "\n")
 		return
@@ -64,6 +62,11 @@ func parseNotice(r io.Reader) (header string, entries []entry, err error) {
 			continue
 		}
 		i++ // consume *****
+
+		// Detect if the notice file has already been deduplicated by looking for the grouped header string.
+		if strings.TrimSpace(lines[i]) == groupedHeaderString {
+			return "", nil, errors.New("the notice file appears to have already been deduplicated")
+		}
 
 		// Skip blank lines before the name@version identifier.
 		for i < len(lines) && strings.TrimSpace(lines[i]) == "" {
@@ -135,7 +138,7 @@ func writeNotice(w io.Writer, header string, groups []licenseGroup) {
 			}
 			fmt.Fprintln(bw, id)
 		} else {
-			fmt.Fprintln(bw, "License for the following packages:")
+			fmt.Fprintln(bw, groupedHeaderString)
 			for _, e := range g.members {
 				id := e.name
 				if e.version != "" {
