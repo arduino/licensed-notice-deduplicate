@@ -8,12 +8,11 @@
 //
 // All entries that share exactly the same license text are merged into a single
 // block that lists every covered package, regardless of whether they belong to
-// the same repository or not.
+// the same repository or not. Running it again on its own output changes nothing.
 package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -63,11 +62,6 @@ func parseNotice(r io.Reader) (header string, entries []entry, err error) {
 		}
 		i++ // consume *****
 
-		// Detect if the notice file has already been deduplicated by looking for the grouped header string.
-		if strings.TrimSpace(lines[i]) == groupedHeaderString {
-			return "", nil, errors.New("the notice file appears to have already been deduplicated")
-		}
-
 		// Skip blank lines before the name@version identifier.
 		for i < len(lines) && strings.TrimSpace(lines[i]) == "" {
 			i++
@@ -76,8 +70,18 @@ func parseNotice(r io.Reader) (header string, entries []entry, err error) {
 			break
 		}
 
-		nameVersion := strings.TrimSpace(lines[i])
-		i++
+		// A block grouped by a previous run lists its packages up to the first blank line.
+		var ids []string
+		if strings.TrimSpace(lines[i]) == groupedHeaderString {
+			i++
+			for i < len(lines) && strings.TrimSpace(lines[i]) != "" && lines[i] != "*****" {
+				ids = append(ids, strings.TrimSpace(lines[i]))
+				i++
+			}
+		} else {
+			ids = append(ids, strings.TrimSpace(lines[i]))
+			i++
+		}
 
 		// Collect body until next ***** or EOF.
 		var bodyLines []string
@@ -93,8 +97,11 @@ func parseNotice(r io.Reader) (header string, entries []entry, err error) {
 			bodyLines = bodyLines[:len(bodyLines)-1]
 		}
 
-		name, version, _ := strings.Cut(nameVersion, "@")
-		entries = append(entries, entry{name: name, version: version, body: strings.Join(bodyLines, "\n")})
+		body := strings.Join(bodyLines, "\n")
+		for _, id := range ids {
+			name, version, _ := strings.Cut(id, "@")
+			entries = append(entries, entry{name: name, version: version, body: body})
+		}
 	}
 
 	return
