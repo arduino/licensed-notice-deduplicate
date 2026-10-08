@@ -1,0 +1,25 @@
+THIRD PARTY NOTICES
+
+*****
+License for the following packages:
+  github.com/example/alpha@v1.0.0
+  @example/delta@1.4.2
+
+MIT License
+
+Copyright (c) Example Authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy.
+
+*****
+github.com/example/beta@v2.3.0
+
+ISC License
+
+Copyright (c) Example Beta
+
+Permission to use, copy, modify, and/or distribute this software is granted.
+
+-----
+
+Example Beta includes software developed by Example Gamma.

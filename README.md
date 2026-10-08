@@ -13,6 +13,8 @@ Example:
 
 `licensed-notice-deduplicate .licenses/NOTICE.project`
 
+Running it again on its own output leaves the file unchanged.
+
 ## License
 
 This tool is released under GPL-3.0 or later.
